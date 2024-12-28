@@ -6,11 +6,15 @@ import { useState } from "react";
 
 import 'primeicons/primeicons.css';
         
+import { useRouter } from "next/navigation";
+import 'primeicons/primeicons.css';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
+import { Dropdown } from "primereact/dropdown";
 import { FileUpload } from 'primereact/fileupload';
         
+                        
 
 interface document {
   url: string;
@@ -20,7 +24,8 @@ interface document {
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null)
   const [documents, setDocuments] = useState<document[]>([])
-
+  const router = useRouter();
+  const [empresa, setEmpresa] = useState<string>('TechFrio');
 
 
   const onUpload = (e: any) => {
@@ -37,19 +42,40 @@ export default function UploadPage() {
     const formData = new FormData()
     formData.append('file', file)
 
-    const response = await fetch('/api/generate-form-acess', {
-      method: 'POST',
-      body: formData
-    })
+    await handleFetch('/api/generate-form-acess', formData, 'Formulario de Acesso', setDocuments);
 
-    if (response.ok) {
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      setDocuments([...documents, { url, name: 'Formulario de Acesso' }])
-    } else {
-      alert('Erro ao gerar PDF')
-    }
   }
+
+  const handleDownloadAll = () => {
+    documents.forEach(doc => {
+      fetch(doc.url).then(response => response.blob()).then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = doc.name;
+        a.click();
+      });
+    });
+  };
+
+  const handleFetch = async (url: string, formData: FormData, documentName: string, setDocuments: React.Dispatch<React.SetStateAction<any[]>>) => {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData
+      });
+  
+      if (response.ok) {
+        const blob = await response.blob();
+        setDocuments(prevDocuments => [...prevDocuments, { url: URL.createObjectURL(blob), name: documentName }]);
+      } else {
+        alert(`Erro ao gerar PDF para ${documentName}`);
+      }
+    } catch (error) {
+      console.error(`Erro ao fazer fetch para ${documentName}:`, error);
+      alert(`Erro ao gerar PDF para ${documentName}`);
+    }
+  };
 
   const body = (rowData: document) => {
     return (
@@ -66,150 +92,117 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="flex flex-column justify-content-center align-items-center w-full">
-      <h1 className="align-self-start">Upload do Arquivo de Texto</h1>
-      <form className="flex w-full gap-2" onSubmit={handleSubmit}>
-        {/* <input type="file" onChange={handleFileChange} accept=".txt" /> */}
-        <div className="flex  w-full">
-
-        <FileUpload className="w-full"
-        name="file"
-        customUpload
-        accept=".txt"
-        maxFileSize={10000000} 
-        auto
-        chooseLabel="Selecione um arquivo"
-        uploadLabel="Carregar"
-        onSelect={onUpload}
-        emptyTemplate={<p className="m-0">Arraste e solte um arquivo aqui ou clique para fazer upload.</p>}
-      />
-        </div>
-      <div className="flex flex-column gap-2 w-full">
-
-        <Button type="submit">Gerar Acesso</Button>
-        
-        <Button type="button" onClick={
-          async () => {
-            if (!file) return alert('Selecione um arquivo')
-
-            const formData = new FormData()
-            formData.append('file', file)
-
-            const response = await fetch('/api/generate-beneficiaries', {
-              method: 'POST',
-              body: formData
-            })
-
-            if (response.ok) {
-              const blob = await response.blob()
-              const url = URL.createObjectURL(blob)
-              // setBeneficiariesUrl(url)
-              setDocuments([...documents, { url, name: 'Lista de UC Participantes' }])
-            } else {
-              alert('Erro ao gerar PDF')
-            }
-          }} >Gerar Beneficiario</Button>
-        
-        <Button type="button" onClick={
-          async () => {
-            if (!file) return alert('Selecione um arquivo')
-
-            const formData = new FormData()
-            formData.append('file', file)
-
-            const response = await fetch('/api/generate-procuration', {
-              method: 'POST',
-              body: formData
-            })
-
-            if (response.ok) {
-              const blob = await response.blob()
-              const url = URL.createObjectURL(blob)
-              // setprocurationUrl(url)
-              setDocuments([...documents, { url, name: 'Procuração' }])              
-            } else {
-              alert('Erro ao gerar PDF')
-            }
-          }} >Gerar Procuração</Button>
-          
-          <Button type="button" onClick={
-          async () => {
-            if (!file) return alert('Selecione um arquivo')
-
-            const formData = new FormData()
-            formData.append('file', file)
-
-            const response = await fetch('/api/generate-dados-registro', {
-              method: 'POST',
-              body: formData
-            })
-
-            if (response.ok) {
-              const blob = await response.blob()
-              const url = URL.createObjectURL(blob)
-              setDocuments([...documents, { url, name: 'Dados de Registro da Central Geradora' }])              
-
-              // setprocurationUrl(url)
-            } else {
-              alert('Erro ao gerar PDF')
-            }
-          }} >Gerar Dados de Registro da Central Geradora</Button>
-          
-          <Button type="button" onClick={
-          async () => {
-            if (!file) return alert('Selecione um arquivo')
-
-            const formData = new FormData()
-            formData.append('file', file)
-
-            const response = await fetch('/api/generate-descript-memorial', {
-              method: 'POST',
-              body: formData
-            })
-
-            if (response.ok) {
-              const blob = await response.blob()
-              const url = URL.createObjectURL(blob)
-              // setprocurationUrl(url)
-              setDocuments([...documents, { url, name: 'Memorial Descritivo' }])
-            } else {
-              alert('Erro ao gerar PDF')
-            }
-          }} >Gerar Memorial Descritivo</Button>
-          
-          <Button type="button" onClick={
-          async () => {
-            if (!file) return alert('Selecione um arquivo')
-
-            const formData = new FormData()
-            formData.append('file', file)
-
-            const response = await fetch('/api/generate-up-carga', {
-              method: 'POST',
-              body: formData
-            })
-
-            if (response.ok) {
-              const blob = await response.blob()
-              const url = URL.createObjectURL(blob)
-              // setprocurationUrl(url)
-              setDocuments([...documents, { url, name: 'Levantamento de Carga' }])
-            } else {
-              alert('Erro ao gerar PDF')
-            }
-          }} >Gerar Levantamento de Carga</Button>
-      </div>
-      </form>     
-      <div className="flex h-full mt-10">
-
-      <div className="flex mt-8 bg-black-alpha-90 w-full">
-            <DataTable value={documents} tableStyle={{ minWidth: '50rem' }}>
-                <Column field="name" header="Documento"></Column>
-                <Column header="Download" body={body}></Column>
-            </DataTable>
+    <div className="flex flex-column w-full h-full">
+      <div className="flex w-full gap-4 bg-cyan-900 justify-content-between align-items-center ">
+        <div className="flex align-items-center gap-4 ml-4">
+          <Dropdown emptyMessage="Selecione uma empresa" placeholder="Selecione uma empresa" value={empresa}                               
+          options={[{ label: 'TechFrio', value: 'TechFrio' }, { label: '+Solar', value: '+Solar' }]} 
+          onChange={(e) => setEmpresa(e.value)}
+          />
+        </div> 
+        <div className="flex align-items-center gap-4">
+          <h3><Button>Gerar rotas</Button></h3>
+          <h3 className=" m-0 mr-3 text-white font-medium ">{'nome do usuario'}</h3>
+          <Button icon="pi pi-sign-out" label="Sair" rounded text className="text-white" onClick={() => {router.push('/')}}  aria-label="Logout" />
         </div>
       </div>
+      <div className="flex p-4 flex-column justify-content-center align-items-center w-full">
+        <h2 className="align-self-start">Arquivo com as variáveis</h2>
+        <h3>Gerando arquivos para {empresa}</h3>
+        <form className="flex w-full gap-2" onSubmit={handleSubmit}>
+          <div className="flex  w-full">
+          <FileUpload className="w-full"
+          name="file"
+          customUpload
+          accept=".txt"
+          maxFileSize={10000000} 
+          auto
+          chooseLabel="Selecione um arquivo"
+          uploadLabel="Carregar"
+          onSelect={onUpload}
+          emptyTemplate={<p className="m-0">Arraste e solte um arquivo aqui ou clique para fazer upload.</p>}
+        />
+          </div>
+        <div className="flex flex-column gap-2 w-full">
+          <div className="flex gap-2">
+            <Button className="w-full" type="submit">Gerar Acesso</Button>
+            
+            <Button className="w-full" type="button" onClick={
+              async () => {
+                if (!file) return alert('Selecione um arquivo')
 
+                const formData = new FormData()
+                formData.append('file', file)
+                await handleFetch('/api/generate-beneficiaries', formData, 'Lista de UC Participantes', setDocuments);
+              }} >Gerar Beneficiario</Button>
+          </div>
+          <div className="flex gap-2">        
+          <Button className="w-full" type="button" onClick={
+            async () => {
+              if (!file) return alert('Selecione um arquivo')
+
+              const formData = new FormData()
+              formData.append('file', file)
+
+              await handleFetch('/api/generate-procuration', formData, 'Procuração', setDocuments);
+
+            }} >Gerar Procuração</Button>          
+            <Button className="w-full" type="button" onClick={
+            async () => {
+              if (!file) return alert('Selecione um arquivo')
+
+              const formData = new FormData()
+              formData.append('file', file)
+              await handleFetch('/api/generate-dados-registro', formData, 'Dados de Registro da Central Geradora', setDocuments);
+
+            }} >Gerar Dados de Registro da Central Geradora</Button>
+          </div>    
+          <div className="flex gap-2">
+            <Button className="w-full" type="button" onClick={
+            async () => {
+              if (!file) return alert('Selecione um arquivo')
+              const formData = new FormData()
+              formData.append('file', file)
+              await handleFetch('/api/generate-descript-memorial', formData, 'Memorial Descritivo', setDocuments);
+
+            }} >Gerar Memorial Descritivo</Button>          
+            <Button className="w-full" type="button" onClick={
+            async () => {
+              if (!file) return alert('Selecione um arquivo')
+              const formData = new FormData()
+              formData.append('file', file)
+              await handleFetch('/api/generate-up-carga', formData, 'Levantamento de Carga', setDocuments);
+            }} >Gerar Levantamento de Carga</Button>          
+          </div>
+          <Button className="w-full justify-content-center" type="button" onClick={async ()=>{
+            if (!file) return alert('Selecione um arquivo')
+              const formData = new FormData()
+              formData.append('file', file)
+              await handleFetch('/api/generate-form-acess', formData, 'Formulario de Acesso', setDocuments);
+              await handleFetch('/api/generate-beneficiaries', formData, 'Lista de UC Participantes', setDocuments);
+              await handleFetch('/api/generate-procuration', formData, 'Procuração', setDocuments);
+              await handleFetch('/api/generate-dados-registro', formData, 'Dados de Registro da Central Geradora', setDocuments);
+              await handleFetch('/api/generate-descript-memorial', formData, 'Memorial Descritivo', setDocuments);
+              await handleFetch('/api/generate-up-carga', formData, 'Levantamento de Carga', setDocuments);
+          }} >Gerar Todos</Button>    
+        </div>
+        </form>     
+        <div className="flex h-full justify-content-center align-items-center  w-full mt-8">
+        <div className="flex justify-content-center align-items-center flex-column w-full">
+          <h3> Documentos gerados </h3>
+          <div className="flex flex-column">
+          <Button className="flex w-max mb-2 align-self-end gap-2" onClick={handleDownloadAll}>
+            Download All <i className="pi pi-download" ></i>
+            </Button>  
+              <DataTable className="flex justify-content-center w-full" emptyMessage={"Sem documentos"} value={documents} tableStyle={{ minWidth: '50rem' }}>
+                  <Column field="name" header="Documento"></Column>
+                  <Column header="Download" body={body}></Column>
+              </DataTable>
+          </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   )
 

@@ -1,11 +1,12 @@
-import path from "path";
 import fs from 'fs';
+import path from "path";
 import { PDFDocument } from "pdf-lib";
 export class PDFService {
     async fillPDF(fieldData: Record<string,string>): Promise<Uint8Array> {
         const templatePath = path.resolve('./public/template/template.pdf')
         const existingPdfBytes = fs.readFileSync(templatePath)
-        const pdfDoc = await PDFDocument.load(existingPdfBytes)
+        const existingPdfBytesArray = new Uint8Array(existingPdfBytes);
+        const pdfDoc = await PDFDocument.load(existingPdfBytesArray)
 
         const form = pdfDoc.getForm()
 

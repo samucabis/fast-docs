@@ -27,6 +27,7 @@ export class WordEditorService {
     }
 
     saveDocument(outputFilePath: string, data: Buffer): void {
-        fs.writeFileSync(outputFilePath, data)
+        const dataBytesArray = new Uint8Array(data);
+        fs.writeFileSync(outputFilePath, dataBytesArray)
     }
 }
